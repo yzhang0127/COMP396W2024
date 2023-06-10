@@ -6,9 +6,10 @@ import org.opencv.video.Video;
 import org.opencv.videoio.VideoCapture;
 
 public class OpticalDense {
-    public void run(String[] args) {
-        String filename = args[0];
-        VideoCapture capture = new VideoCapture(filename);
+    public void run(/*String[] args*/) {
+        //String filename = args[0];
+        //VideoCapture capture = new VideoCapture(filename);
+        VideoCapture capture = new VideoCapture(0);
         if (!capture.isOpened()) {
             //error in opening the video input
             System.out.println("Unable to open file!");
@@ -23,10 +24,14 @@ public class OpticalDense {
             if (frame2.empty()) {
                 break;
             }
+
             Imgproc.cvtColor(frame2, next, Imgproc.COLOR_BGR2GRAY);
             Mat flow = new Mat(prvs.size(), CvType.CV_32FC2);
             Video.calcOpticalFlowFarneback(prvs, next, flow,0.5,3,15,3,5,1.2,0);
             // visualization
+            //////////////////
+            HighGui.imshow("original",frame2);
+            /////////////////
             ArrayList<Mat> flow_parts = new ArrayList<>(2);
             Core.split(flow, flow_parts);
             Mat magnitude = new Mat(), angle = new Mat(), magn_norm = new Mat();
@@ -47,16 +52,11 @@ public class OpticalDense {
             HighGui.imshow("frame2", bgr);
             int keyboard = HighGui.waitKey(30);
             if (keyboard == 'q' || keyboard == 27) {
+                HighGui.destroyAllWindows();
                 break;
             }
             prvs = next;
         }
         System.exit(0);
-    }
-}
-public class OpticalFlowDenseDemo {
-    public static void main(String[] args) {
-        System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-        new OptFlowDense().run(args);
     }
 }
