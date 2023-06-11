@@ -1,23 +1,20 @@
+import java.sql.SQLOutput;
 import java.util.*;
 import org.opencv.core.*;
 import org.opencv.highgui.HighGui;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.video.*;
 import org.opencv.videoio.*;
+import org.opencv.photo.Photo;
+
 
 
 public class ObjectAvoidance {
-    public void cam_OptFlow(String filename, boolean useFile, int channel){
-        VideoCapture capture = null;
+    public void cam_OptFlow_Farneback(int channel, boolean visualization, double biasL, double biasR){
+        VideoCapture capture;
         //capture video frames
-        if(useFile){
-            capture = new VideoCapture(filename);
-
-        }
-        else{
-            //System.out.println("use "+channel+" channel");
-            capture = new VideoCapture(channel);
-        }
+        //System.out.println("use "+channel+" channel");
+        capture = new VideoCapture(channel);
 
         if (!capture.isOpened()) {
             System.out.println("Unable to capture");
@@ -27,19 +24,29 @@ public class ObjectAvoidance {
         //create Video Frame
         int frameWidth = (int) capture.get(Videoio.CAP_PROP_FRAME_WIDTH);
         int frameHeight = (int) capture.get(Videoio.CAP_PROP_FRAME_HEIGHT);
-        //System.out.println(frameHeight);
-        //System.out.println(frameWidth);
+        //System.out.println(frameHeight); //480
+        //System.out.println(frameWidth); //640
 
         Rect leftRegion = new Rect(0,0,frameWidth/2, frameHeight);
         Rect rightRegion = new Rect(frameWidth/2,0,frameWidth/2,frameHeight);
 
+        //Rect leftRegion = new Rect(100,50,220, 430);
+        //Rect rightRegion = new Rect(frameWidth/2,50,220,430);
+
         //create optical flow instances and divide the frame into half
         Mat prev_Frame = new Mat(), cur_Frame = new Mat();
         Mat previousGray = new Mat(), curGray = new Mat();
-        float diff;
+
+        double thresholdLeft = Double.MIN_VALUE, thresholdRight = Double.MIN_VALUE;
+        double tmp = 0, tmp2 = 0;
+
+
 
 
         //main loop
+        int maxStep = 40;
+        int i = 0; //for configuration
+
         capture.read(prev_Frame);
         while(true){
             capture.read(cur_Frame);
@@ -52,69 +59,138 @@ public class ObjectAvoidance {
             Imgproc.cvtColor(prev_Frame,previousGray,Imgproc.COLOR_BGR2GRAY);
 
 
+            if(visualization){
+                HighGui.imshow("original left",cur_Frame.submat(leftRegion));
+                HighGui.imshow("original right",cur_Frame.submat(rightRegion));
 
-            // Define keypoints in the left and right regions
-            MatOfPoint previousLeftPts = new MatOfPoint();
-            MatOfPoint previousRightPts = new MatOfPoint();
-            MatOfPoint currentLeftPts = new MatOfPoint();
-            MatOfPoint currentRightPts = new MatOfPoint();
-
-            // Populate keypoints with corners from the left and right regions
-            Imgproc.goodFeaturesToTrack(previousGray.submat(leftRegion), previousLeftPts, 100, 0.3, 7, new Mat(),7,false,0.04);
-            Imgproc.goodFeaturesToTrack(previousGray.submat(rightRegion), previousRightPts, 100, 0.3, 7, new Mat(),7,false,0.04);
-
-            //visualization
-            Mat flow = new Mat();
-            Video.calcOpticalFlowFarneback(previousGray,curGray,flow,0.2,5,10,5,5,1.2,0);
-            Mat flowVisual = visualizeOpticalFlow(flow);
-
-            HighGui.imshow("Original Left",cur_Frame.submat(leftRegion));
-            HighGui.imshow("Original Right", cur_Frame.submat(rightRegion));
-            HighGui.imshow("Flow",flowVisual);
-
-
-            if (HighGui.waitKey(1)==27) {
-                HighGui.destroyAllWindows();
-                capture.release();
-                System.exit(0);
-                break;
+                if(HighGui.waitKey(1)==27){
+                    capture.release();
+                    HighGui.destroyAllWindows();
+                    System.exit(-1);
+                }
             }
 
-            // Convert keypoints to MatOfPoint2f
-            MatOfPoint2f previousLeftPts2f = new MatOfPoint2f(previousLeftPts.toArray());
-            MatOfPoint2f previousRightPts2f = new MatOfPoint2f(previousRightPts.toArray());
-
-
+            //prepare for calculation
+            MatOfPoint prevLeftPoints = new MatOfPoint(), prevRightPoints = new MatOfPoint();
+            MatOfPoint curLeftPoints = new MatOfPoint(), curRightPoints = new MatOfPoint();
+            //find good features to track
+            Imgproc.goodFeaturesToTrack(previousGray.submat(leftRegion),prevLeftPoints,600,0.7,14, new Mat(),7,false,0.04);
+            Imgproc.goodFeaturesToTrack(previousGray.submat(rightRegion),prevRightPoints,560,0.8,10, new Mat(),7,false,0.04);
             //calculate optical flow
-            MatOfPoint2f currentLeftPts2f = new MatOfPoint2f();
-            MatOfPoint2f currentRightPts2f = new MatOfPoint2f();
+            MatOfPoint2f prevL2f = new MatOfPoint2f(prevLeftPoints.toArray()), prevR2f = new MatOfPoint2f(prevRightPoints.toArray());
+            MatOfPoint2f resultL = new MatOfPoint2f(),resultR = new MatOfPoint2f();
+            //MatOfPoint2f curL2f = new MatOfPoint2f(curLeftPoints.toArray()), curR2F = new MatOfPoint2f(curRightPoints.toArray());
             MatOfByte status = new MatOfByte();
             MatOfFloat err = new MatOfFloat();
-            Video.calcOpticalFlowPyrLK(previousGray, curGray, previousLeftPts2f, currentLeftPts2f, status, err);
-            Video.calcOpticalFlowPyrLK(previousGray, curGray, previousRightPts2f, currentRightPts2f, status, err);
+            TermCriteria criteria = new TermCriteria(TermCriteria.COUNT + TermCriteria.EPS,10,0.03);
 
-            //calculate avg flow in left
-            float left = sumFlow(previousLeftPts2f,currentLeftPts2f);
-            left+=left*0.4;
-            //calculate avg flow in right
-            float right = sumFlow(previousRightPts2f,currentRightPts2f);
+            if(prevL2f.empty() || prevR2f.empty()){
+                System.out.println("Not enough feature points. Waiting for next collection of data");
 
-
-
-
-            //for debug
-            System.out.println("left flow: "+left);
-            System.out.println("right flow: "+right);
-
-            if(left>right){
-                System.out.println("turn right");
             }
-            else if(left == right){
-                System.out.println("no change");
+            else {
+
+                Video.calcOpticalFlowPyrLK(previousGray, curGray, prevL2f, resultL, status, err, new Size(15, 15), 2, criteria);
+                Video.calcOpticalFlowPyrLK(previousGray, curGray, prevR2f, resultR, status, err, new Size(15, 15), 2, criteria);
+
+                //convert the result to an array of vectors
+                Point left_arr[] = resultL.toArray();
+                Point right_arr[] = resultR.toArray();
+
+
+                if (i > maxStep) {
+                    //find out direction to move
+
+                    //Conditions:
+                    //1. left max <= left threshold and right max <= right threshold: both sides have decrease in objects
+                    //  Thus, forward
+                    //2. left max > left threshold and right max <= right threshold: left side have increase in objects
+                    //  Thus, turn right
+                    //3. left max <= left threshold and right max > right threshold: right side have increase in objects
+                    //  Thus, turn left
+                    //4. left max > left threshold and right max > right threshold: run into an obstcle
+                    //  Thus, stop
+
+                    //Unable to do:
+                    //6. Two Infer-red sensor output the same distance and it is too close to an object: run into a wall
+                    //  Stop
+
+                    //if the max - threshold is within 10% of the threshold, then it would be considered as the same
+                    //if max - threshold is greater than 10% of the threshold:
+                    //  a. max - threshold < 0: smaller
+                    //  b. max - threshold > 0: greater
+
+                    //find max vector in left and right half
+                    double maxLeft = findMaxMagnitude(left_arr);
+                    double maxRight = findMaxMagnitude(right_arr);
+
+                    //for debug////////////////////////////////////
+                    //System.out.println("-----------------------DATA----------------------");
+                    //System.out.println("Max left flow: " + maxLeft);
+                    //System.out.println("Max right flow: " + maxRight);
+                    //System.out.println("Left Threshold: " + thresholdLeft);
+                    //System.out.println("Right Threshold: " + thresholdRight);
+                    //System.out.println("-------------------------------------------------");
+                    /////////////////////////////////////////////
+
+                    double diffLeft = maxLeft - thresholdLeft, diffRight = maxRight - thresholdRight;
+                    double absLeft = Math.abs(diffLeft), absRight = Math.abs(diffRight);
+                    double limitLeft = 0.07 * thresholdLeft, limitRight = 0.05 * thresholdRight;
+                    String cmd = null;
+
+                    //System.out.println("diff left: " + diffLeft);
+                    //System.out.println("diff right: " + diffRight);
+                    System.out.println();
+
+
+
+                    if(absLeft <= limitLeft && absRight <= limitRight){
+                        //condition 1
+                        cmd = "forward";
+                    }
+                    else if(absLeft > limitLeft && absRight <= limitRight){
+                        //condition 2
+                        cmd = "right";
+                    }
+                    else if(absLeft <= limitLeft && absRight > limitRight){
+                        //condition 3
+                        cmd = "left";
+                    }
+                    else if(absLeft > limitLeft && absRight > limitRight){
+                        //condition 4
+                        cmd = "stop";
+                    }
+                    if(cmd!=null) {
+                        System.out.println("-------------------- Command Output -------------------");
+                        System.out.println(cmd);
+                        System.out.println("-------------------------------------------------------");
+                    }
+
+                } else {
+                    //when i is smaller and equal to 15 it will halt and initialize the thresholds based on
+                    //the current environment
+
+                    //find the threshold
+
+                    tmp += findMaxMagnitude(left_arr);
+                    tmp2 += findMaxMagnitude(right_arr);
+                    System.out.println("----------------------- Halt. Initializing threshold. Step " + i + " ------------");
+
+                    if (i == maxStep) {
+                        thresholdLeft = tmp / (i + 1)+biasL;
+                        thresholdRight = tmp2 / (i + 1)+biasR;
+                        System.out.println("------------------ FINISH INITIALIZATION ---------------------");
+                        //System.out.println("Left Final Threshold: " + thresholdLeft);
+                        //System.out.println("Right Final Threshold: " + thresholdRight);
+                        System.out.println("==============================================================");
+                    }
+
+
+                    i++;
+
+                }
             }
-            else if (left<right){
-                System.out.println("turn left");
-            }
+
 
             //update prev_Frame
             prev_Frame = cur_Frame.clone();
@@ -125,22 +201,34 @@ public class ObjectAvoidance {
 
     }
 
-    private static float sumFlow(MatOfPoint2f prev, MatOfPoint2f cur){
-        float totalFlow = 0;
 
-        Point[] prevArray = prev.toArray();
-        Point[] curArray = cur.toArray();
 
-        for(int i = 0; i < prevArray.length; i++){
-            double dx = curArray[i].x - prevArray[i].x;
-            double dy = curArray[i].y - prevArray[i].y;
-            totalFlow += Math.sqrt(dx * dx + dy * dy);
+    private static double findMaxMagnitude(Point[] vector){
+        double maxMag = Double.MIN_VALUE;
+
+        for(int i = 0; i < vector.length; i++){
+
+            //get the flow vector
+            Point flowVector = vector[i];
+            double magnitude = calculateMagnitude(flowVector);
+
+            if(magnitude>maxMag ){
+                //find the vector that is moving towards the robot with maximum velocity
+                maxMag = magnitude;
+            }
+
         }
-
-        return totalFlow;
+        //System.out.println("Max mag among this data set: "+maxMag);
+        return maxMag;
     }
 
-    private static Mat visualizeOpticalFlow(Mat flow) {
+
+    private static double calculateMagnitude(Point vector){
+
+        return Math.sqrt(vector.x*vector.x+vector.y*vector.y);
+    }
+
+    private static Mat visualizeOpticalFlow_Farneback(Mat flow) {
         ArrayList<Mat> flow_parts = new ArrayList<>(2);
         Core.split(flow, flow_parts);
         Mat magnitude = new Mat(), angle = new Mat(), magn_norm = new Mat();
@@ -161,8 +249,11 @@ public class ObjectAvoidance {
         return bgr;
     }
 
+    private static Mat visualizeOpticalFlow_PyrLK(){
+        return null;
+    }
     public static void main(String[] args) {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-        new ObjectAvoidance().cam_OptFlow(null,false,0);
+        new ObjectAvoidance().cam_OptFlow_Farneback(0,true,0,0);
     }
 }

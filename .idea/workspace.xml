@@ -4,16 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d52a8a34-7257-48fc-b643-5facba309cfc" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/HornSchunk.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/ObjectAvoidance.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+    <list default="true" id="d52a8a34-7257-48fc-b643-5facba309cfc" name="Changes" comment="Need to Solve for static objects">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/OpticalFlow.iml" beforeDir="false" afterPath="$PROJECT_DIR$/OpticalFlow.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/OptFlow.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/OptFlow.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/OpticalDense.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/OpticalDense.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/OpticalFlowDemo.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/OpticalFlowDemo.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/OpticalFlowDenseDemo.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/OpticalFlowDenseDemo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ObjectAvoidance.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ObjectAvoidance.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -41,21 +35,30 @@
   </component>
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
+    &quot;Downloaded.Files.Path.Enabled&quot;: &quot;true&quot;,
+    &quot;Repository.Attach.Annotations&quot;: &quot;false&quot;,
+    &quot;Repository.Attach.JavaDocs&quot;: &quot;false&quot;,
+    &quot;Repository.Attach.Sources&quot;: &quot;false&quot;,
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
     &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/OpenCV470/opencv/build/java/x64&quot;,
+    &quot;jdk.selected.JAVA_MODULE&quot;: &quot;corretto-11&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/la4j-0.6.0/la4j-0.6.0&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Global Libraries&quot;,
     &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;
   }
 }</component>
   <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\Prof_Vybihal_Lab\OpticalFlow\OpticalFlow\src" />
+    </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="D:\Prof_Vybihal_Lab\OpticalFlow\OpticalFlow\src" />
     </key>
@@ -92,8 +95,8 @@
     <recent_temporary>
       <list>
         <item itemvalue="Application.ObjectAvoidance" />
-        <item itemvalue="Application.OpticalFlowDenseDemo" />
         <item itemvalue="Application.OpticalFlowDemo" />
+        <item itemvalue="Application.OpticalFlowDenseDemo" />
         <item itemvalue="Application.test" />
       </list>
     </recent_temporary>
@@ -110,8 +113,18 @@
       <workItem from="1685736889169" duration="1481000" />
       <workItem from="1685738382059" duration="1352000" />
       <workItem from="1686156649803" duration="2224000" />
-      <workItem from="1686332649166" duration="20309000" />
+      <workItem from="1686332649166" duration="20540000" />
+      <workItem from="1686423573654" duration="22511000" />
+      <workItem from="1686498564376" duration="12962000" />
     </task>
+    <task id="LOCAL-00001" summary="Need to Solve for static objects">
+      <created>1686376218039</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1686376218039</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -127,5 +140,9 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Need to Solve for static objects" />
+    <option name="LAST_COMMIT_MESSAGE" value="Need to Solve for static objects" />
   </component>
 </project>
