@@ -10,7 +10,7 @@ import org.opencv.photo.Photo;
 
 
 public class ObjectAvoidance {
-    public void cam_OptFlow_Farneback(int channel, boolean visualization, double biasL, double biasR){
+    public void cam_OptFlow(int channel, boolean visualization, double biasL, double biasR){
         VideoCapture capture;
         //capture video frames
         //System.out.println("use "+channel+" channel");
@@ -39,6 +39,8 @@ public class ObjectAvoidance {
 
         double thresholdLeft = Double.MIN_VALUE, thresholdRight = Double.MIN_VALUE;
         double tmp = 0, tmp2 = 0;
+
+
 
 
 
@@ -140,17 +142,19 @@ public class ObjectAvoidance {
 
                     //System.out.println("diff left: " + diffLeft);
                     //System.out.println("diff right: " + diffRight);
-                    System.out.println();
+                    //System.out.println();
 
 
 
                     if(absLeft <= limitLeft && absRight <= limitRight){
                         //condition 1
-                        cmd = "forward";
+                        cmd="forward";
+
                     }
                     else if(absLeft > limitLeft && absRight <= limitRight){
                         //condition 2
                         cmd = "right";
+
                     }
                     else if(absLeft <= limitLeft && absRight > limitRight){
                         //condition 3
@@ -160,10 +164,14 @@ public class ObjectAvoidance {
                         //condition 4
                         cmd = "stop";
                     }
+
+
+
                     if(cmd!=null) {
                         System.out.println("-------------------- Command Output -------------------");
                         System.out.println(cmd);
                         System.out.println("-------------------------------------------------------");
+
                     }
 
                 } else {
@@ -254,6 +262,6 @@ public class ObjectAvoidance {
     }
     public static void main(String[] args) {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-        new ObjectAvoidance().cam_OptFlow_Farneback(0,true,0,0);
+        new ObjectAvoidance().cam_OptFlow(0,true,0,0);
     }
 }

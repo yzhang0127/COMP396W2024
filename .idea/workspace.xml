@@ -4,9 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d52a8a34-7257-48fc-b643-5facba309cfc" name="Changes" comment="Need to Solve for static objects">
+    <list default="true" id="d52a8a34-7257-48fc-b643-5facba309cfc" name="Changes" comment="Looking for a way to balance out the instability">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/OpticalFlow.iml" beforeDir="false" afterPath="$PROJECT_DIR$/OpticalFlow.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/ObjectAvoidance.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ObjectAvoidance.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -115,7 +114,7 @@
       <workItem from="1686156649803" duration="2224000" />
       <workItem from="1686332649166" duration="20540000" />
       <workItem from="1686423573654" duration="22511000" />
-      <workItem from="1686498564376" duration="12962000" />
+      <workItem from="1686498564376" duration="14105000" />
     </task>
     <task id="LOCAL-00001" summary="Need to Solve for static objects">
       <created>1686376218039</created>
@@ -124,7 +123,14 @@
       <option name="project" value="LOCAL" />
       <updated>1686376218039</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Looking for a way to balance out the instability">
+      <created>1686511637660</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1686511637660</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -143,6 +149,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Need to Solve for static objects" />
-    <option name="LAST_COMMIT_MESSAGE" value="Need to Solve for static objects" />
+    <MESSAGE value="Looking for a way to balance out the instability" />
+    <option name="LAST_COMMIT_MESSAGE" value="Looking for a way to balance out the instability" />
   </component>
 </project>
