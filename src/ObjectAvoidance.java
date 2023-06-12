@@ -1,11 +1,12 @@
-import java.sql.SQLOutput;
-import java.util.*;
 import org.opencv.core.*;
 import org.opencv.highgui.HighGui;
 import org.opencv.imgproc.Imgproc;
-import org.opencv.video.*;
-import org.opencv.videoio.*;
-import org.opencv.photo.Photo;
+import org.opencv.video.BackgroundSubtractorMOG2;
+import org.opencv.video.Video;
+import org.opencv.videoio.VideoCapture;
+import org.opencv.videoio.Videoio;
+
+import java.util.ArrayList;
 
 
 
@@ -40,7 +41,8 @@ public class ObjectAvoidance {
         double thresholdLeft = Double.MIN_VALUE, thresholdRight = Double.MIN_VALUE;
         double tmp = 0, tmp2 = 0;
 
-
+        //Jiahao: Create a background subtractor
+        BackgroundSubtractorMOG2 subtractor = Video.createBackgroundSubtractorMOG2();
 
 
 
@@ -48,6 +50,7 @@ public class ObjectAvoidance {
         //main loop
         int maxStep = 40;
         int i = 0; //for configuration
+        int j = 0;
 
         capture.read(prev_Frame);
         while(true){
@@ -59,6 +62,16 @@ public class ObjectAvoidance {
             //preprocess frame
             Imgproc.cvtColor(cur_Frame,curGray,Imgproc.COLOR_BGR2GRAY);
             Imgproc.cvtColor(prev_Frame,previousGray,Imgproc.COLOR_BGR2GRAY);
+
+            //Jiahao: apply background subtraction...
+            Mat fgMask = new Mat();
+            subtractor.apply(curGray, fgMask);
+
+            //Jiahao: Now fgMask contains the foreground mask. We can use this to mask out
+            // the background when calculating the optical flow.
+            Mat maskedGray = new Mat();
+            curGray.copyTo(maskedGray, fgMask);
+
 
 
             if(visualization){
@@ -170,9 +183,17 @@ public class ObjectAvoidance {
                     if(cmd!=null) {
                         System.out.println("-------------------- Command Output -------------------");
                         System.out.println(cmd);
+                        //j++;
                         System.out.println("-------------------------------------------------------");
 
                     }
+
+                    //recaliberate
+                    /*if(j>=100){
+                        System.out.println("======================Start Recaliberating===================");
+                        j = 0;
+                        i = 0;
+                    }*/
 
                 } else {
                     //when i is smaller and equal to 15 it will halt and initialize the thresholds based on
