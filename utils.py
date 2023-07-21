@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 
 def getMid(frame):
+    #print("height:",frame.shape[0])
+    #print("width:",frame.shape[1])
     #return mid_height,mid_width
     return frame.shape[0]//2,frame.shape[1]//2
 
@@ -24,12 +26,9 @@ def getMatrixAvg(matrix):
     return np.mean(top_left.flatten()),np.mean(top_right.flatten()),np.mean(bot_right.flatten()),np.mean(bot_left.flatten())
 
 def vote(optDir,depthDir):
-    for i in range(len(depthDir)):
-        if(optDir == depthDir[i]):
-            return optDir
-    if(depthDir[0]=="STOP"):
-        return optDir
-    return depthDir[0]
+    if(optDir!=depthDir[0]):
+        return depthDir[0]
+    return optDir
 
 def getFlowDir(leftTop,leftBot,rightTop,rightBot):
     min = 900

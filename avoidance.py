@@ -50,6 +50,7 @@ while cap.isOpened():
 
     #get depth info
     depth = getDepth(transform,frame,midas)
+
     # get average depths in four quadrants in the depth map
     tl, tr, br, bl = utils.getMatrixAvg(depth)
     #subtract all pixels that is far away
