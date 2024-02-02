@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import math
 
 def getMid(frame):
     #print("height:",frame.shape[0])
@@ -13,7 +14,11 @@ def subtractFarPixels(frame, depth, threshold):
             if(depth[i][j]<threshold):
                 frame[i][j]=[255,255,255]
     return frame
+def depth_to_distance(depth_value,depth_scale=1.0):
+    return 1.0/((depth_value*depth_scale)+0.000000001)
 
+def to_pixel(dim):
+    return math.ceil(dim*37.795)
 def getMatrixAvg(matrix):
     h = matrix.shape[0]
     w = matrix.shape[1]
