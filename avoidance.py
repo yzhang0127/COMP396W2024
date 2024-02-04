@@ -7,6 +7,7 @@ import torch
 import time
 import numpy as np
 import random
+import math
 from sklearn.linear_model import RANSACRegressor
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import  StandardScaler
@@ -81,52 +82,76 @@ def estimation(dimX, dimY, modelName,cam_channel=0,mode="ground"):
         if mode == "ground":
             #A groud based robot can't move upwards
 
+            startX = mid_width - math.ceil(mid_width / 4)
+            startY = mid_height
+            endX = mid_width + math.ceil(mid_width / 4)
+            endY = frame.shape[0] - 1
 
 
-            population = 2000
-            if frame_idx%25==0:
-                plane = []
-                # Generate random indices without replacement
-                indices = np.random.choice(output_norm.shape[1], size=(population, 3), replace=True)
-                y_indices = np.random.randint(mid_height, output_norm.shape[0], size=(population, 3))
+            #randomly sample 3 points from a certain region
+            #fit a plane to them and calculate the norm of the plane
+            population=100
+            vectors_sets = []
+            norms = []
+            while len(vectors_sets) < population:
+                tmp = []
+                while len(tmp) < 3:
+                    X = np.random.randint(startX, endX)
+                    Y = np.random.randint(startY, endY)
+                    Z = output_norm[Y][X]
+                    if [X, Y, Z] not in tmp:
+                        tmp.append([X, Y, Z])
+                    if len(tmp) == 3:
+                        # check non-colinear
+                        AB = np.array(tmp[0]) - np.array(tmp[1])
+                        BC = np.array(tmp[1]) - np.array(tmp[2])
 
-                # Create array with random points
-                points = np.stack([indices, y_indices, output_norm[y_indices, indices]], axis=-1)
+                        cross_prod = np.cross(BC, AB)
+                        norm = np.linalg.norm(cross_prod)
+                        if norm < 10.0:
+                            # colinear
+                            tmp.clear()
+                        else:
+                            d=cross_prod[0]*X+cross_prod[1]*Y+cross_prod[2]*Z
+                            norms.append([cross_prod,d])
+                if tmp not in vectors_sets:
+                    vectors_sets.append(tmp)
+                else:
+                    norms.remove(len(norms)-1)
+            # find the norm from norms that fit most points from a rectangular region (startX,startY) to (endX,endY)
+            #Note Z is the value at output_norm[Y][X]
+            counts = [0]*len(norms)
+            tested = []
+            while len(tested)<100:
+                X = np.random.randint(startX, endX)
+                Y = np.random.randint(startY, endY)
+                Z = output_norm[Y][X]
+                if [X,Y,Z] not in tested:
+                    tested.append([X,Y,Z])
+                    for i in range(len(norms)):
+                        fit = norms[i][0][0]*X+norms[i][0][1]*Y+norms[i][0][2]*Z
+                        if abs(abs(fit)-abs(norms[i][1]))<=50.0:
+                            counts[i]+=1
+            best_fit_idx = np.argmax(counts)
+            best_plane = norms[best_fit_idx]
 
-                # Calculate vectors and cross products
-                AB = points[:, 1, :] - points[:, 0, :]
-                AC = points[:, 2, :] - points[:, 0, :]
-                norms = np.cross(AB, AC)
-                # Extract X, Y, Z components
-                X=[norm[0] for norm in norms[:population]]
-                Y=[norm[1] for norm in norms[:population]]
-                Z=[norm[2] for norm in norms[:population]]
 
-                # Create a RANSAC regressor
-                regressor = make_pipeline(StandardScaler(),RANSACRegressor())
-                # Reshape X, Y, Z to column vectors
-                X = np.array(X).reshape(-1,1)
-                Y = np.array(Y).reshape(-1,1)
-                Z = np.array(Z).reshape(-1,1)
-                #fit the regressor
-                regressor.fit(np.hstack([X,Y]),Z)
-                # Retrieve the coefficients of the plane
-                a,b= regressor.named_steps['ransacregressor'].estimator_.coef_[0]
-                c = regressor.named_steps['ransacregressor'].estimator_.intercept_
-            plane = [a,b,c]
+
+
+
+
+
             #filter ground
-            threshold = 0.23
-            scale1 = 1e8
 
-            '''
             #for demo only
             for i in range (mid_height,output_norm.shape[0]):
                 for j in range(0,output_norm.shape[1]):
+                    d = best_plane[0][0]*j+best_plane[0][1]*i+best_plane[0][2]*output_norm[i][j]
+                    if abs(abs(d)-abs(best_plane[1])) <= 30.0:
+                        output_norm[i][j]=0.01
 
-                    value1 = abs(a*j+b*i+c)/scale1
-                    if np.abs(value1-output_norm[i][j])<=threshold :
-                        output_norm[i][j]=0.001
-            '''
+
+
 
 
 
