@@ -68,3 +68,65 @@ def getDepthDir(tl,bl,tr,br,threshold):
         dir[0]="STOP"
     dict(sorted(dir.items()))
     return list(dir.values())
+def findNorms(output_norm,mid_height,mid_width,frame,results):
+    # randomly sample 3 points from a certain region
+    # fit a plane to them and calculate the norm of the plane
+    startX = 0
+    startY = mid_height
+    endX = frame.shape[1] - 1
+    endY = frame.shape[0] - 1
+    best_plane = None
+    most_counts = 0
+    for _ in range(2):
+        population = 700
+        vectors_sets = []
+        norms = []
+        while len(vectors_sets) < population:
+            tmp = []
+            while len(tmp) < 3:
+                X = np.random.randint(startX, endX)
+                Y = np.random.randint(startY, endY)
+                Z = output_norm[Y][X]
+                if [X, Y, Z] not in tmp:
+                    tmp.append([X, Y, Z])
+                if len(tmp) == 3:
+                    # check non-colinear
+                    AB = np.array(tmp[0]) - np.array(tmp[1])
+                    BC = np.array(tmp[1]) - np.array(tmp[2])
+
+                    cross_prod = np.cross(BC, AB)
+                    norm = np.linalg.norm(cross_prod)
+                    if norm < 10.0:
+                        # colinear
+                        tmp.clear()
+                    else:
+                        d = cross_prod[0] * X + cross_prod[1] * Y + cross_prod[2] * Z
+                        norms.append([cross_prod, d])
+            if tmp not in vectors_sets:
+                vectors_sets.append(tmp)
+            else:
+                norms.remove(len(norms) - 1)
+        # find the norm from norms that fit most points from a rectangular region (startX,startY) to (endX,endY)
+        # Note Z is the value at output_norm[Y][X]
+
+        if best_plane != None:
+            norms.append(best_plane)
+        counts = [0] * len(norms)
+        if most_counts > 0:
+            counts[len(counts) - 1] = most_counts
+        tested = []
+        while len(tested) < 300:
+            X = np.random.randint(startX, endX)
+            Y = np.random.randint(startY, endY)
+            Z = output_norm[Y][X]
+            if [X, Y, Z] not in tested:
+                tested.append([X, Y, Z])
+                for i in range(len(norms)):
+                    fit = norms[i][0][0] * X + norms[i][0][1] * Y + norms[i][0][2] * Z
+                    if abs(abs(fit) - abs(norms[i][1])) <= 50.0:
+                        counts[i] += 1
+        best_fit_idx = np.argmax(counts)
+        best_plane = norms[best_fit_idx]
+        most_counts = counts[best_fit_idx]
+        results[0] = best_plane
+
