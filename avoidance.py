@@ -98,7 +98,7 @@ def estimation(dimX, dimY, modelName,cam_channel=0,mode="ground"):
             c_x = 0
             c_y = 0
             first_try = True
-            while len(visited_centers)<=8 and not found:
+            while len(visited_centers)<=20 and not found:
                 #choose a random center
                 #x,y are the coordinates of the left top cornor of the tile
                 if first_try:
@@ -107,24 +107,28 @@ def estimation(dimX, dimY, modelName,cam_channel=0,mode="ground"):
                     first_try = False
                 else:
                     y = random.randint(4,6)
-                    x = random.randint(4,6)
+                    x = random.randint(1,7)
                     while [x,y] in visited_centers:
                         y = random.randint(4, 6)
-                        x = random.randint(4, 6)
+                        x = random.randint(1, 7)
                 visited_centers.append([x,y])
                 safe_region.append([])
                 #start to span a rectangle
                 c_x = x
                 c_y = y
+
                 queue = [[x,y]]
                 dis_to_center = 1
                 #rectangle will be large enough when the first coord that is 3 tiles away from the center is popped
+                counter = 0
                 while len(queue)>0:
                     coord = queue.pop(0)
                     x = coord[0]
                     y = coord[1]
 
-                    if abs(x-c_x)>=dis_to_center or abs(y-c_y)>=dis_to_center:
+
+
+                    if abs(x-c_x)>dis_to_center or abs(y-c_y)>dis_to_center:
                         #safe region is a 3 * 3 square
                         #the distance from the edge of the rectangle to the center is 1 tile
                         found = True
@@ -132,11 +136,13 @@ def estimation(dimX, dimY, modelName,cam_channel=0,mode="ground"):
                         break
 
 
+
                     if coord in visited_submat and coord not in safe_tiles:
                         # unable to span a rectangle
                         break
                     elif coord in visited_submat and coord in safe_tiles:
                         safe_region[len(safe_region) - 1].append([x,y])
+                        counter+=1
                     elif coord not in visited_submat:
                         #not visited
                         visited_submat.append(coord)
@@ -148,7 +154,7 @@ def estimation(dimX, dimY, modelName,cam_channel=0,mode="ground"):
                         if y >= 4:
                             t1.join()
                             best_plane = results[0]
-                            print(best_plane)
+
                             for i in range(0, len(subMat)):
                                 for j in range(0 ,len(subMat) ):
                                     d = best_plane[0][0] * j + best_plane[0][1] * i + best_plane[0][2] * output_norm[i+y*height_interval][j+x*width_interval]
@@ -156,10 +162,11 @@ def estimation(dimX, dimY, modelName,cam_channel=0,mode="ground"):
                                         subMat[i][j] = 0.01
 
 
-                        if np.mean(subMat)<=0.02 and y<=4:
+                        if np.mean(subMat)<=0.02:
                             #safe
                             safe_region[len(safe_region)-1].append([x,y])
                             safe_tiles.append([x,y])
+                            counter+=1
                         else:
                             #not safe break
                             break
@@ -208,7 +215,7 @@ def estimation(dimX, dimY, modelName,cam_channel=0,mode="ground"):
 
                 leftMean = np.mean(leftSubMat)
                 rightMean = np.mean(rightSubMat)
-                print([leftMean,rightMean])
+
                 if leftMean < rightMean:
                     if leftMean <= 0.45:
                         cv2.rectangle(frame, (0, 0), (3*width_interval, 9*height_interval), (0, 255, 255), 2)
