@@ -68,13 +68,13 @@ def getDepthDir(tl,bl,tr,br,threshold):
         dir[0]="STOP"
     dict(sorted(dir.items()))
     return list(dir.values())
-def findNorms(output_norm,mid_height,mid_width,frame,results):
+def findNorms(output_norm,frame,results):
     # randomly sample 3 points from a certain region
     # fit a plane to them and calculate the norm of the plane
-    startX = 0
-    startY = mid_height
-    endX = frame.shape[1] - 1
-    endY = frame.shape[0] - 1
+    startX = frame.shape[1]/9*2
+    startY = frame.shape[0]/9*6
+    endX = frame.shape[1]/9*7
+    endY = frame.shape[0]
     best_plane = None
     most_counts = 0
     for _ in range(2):

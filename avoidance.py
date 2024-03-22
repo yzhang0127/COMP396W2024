@@ -59,7 +59,6 @@ def estimation(dimX, dimY, modelName,cam_channel=0,mode="ground"):
 
 
 
-    last_center = [4,4]
     while cap.isOpened():
 
         start = time.time()
@@ -81,170 +80,200 @@ def estimation(dimX, dimY, modelName,cam_channel=0,mode="ground"):
         height_interval = math.floor(frame.shape[0]/9)
         mat = [[0 for _ in range(9)] for _ in range(9)]
 
+
         if mode == "ground":
             #A groud based robot can't move upwards
 
             results = [None]*1
-            t1 = threading.Thread(target=utils.findNorms,args=(output_norm,mid_height,mid_width,frame,results))
+            t1 = threading.Thread(target=utils.findNorms,args=(output_norm,frame,results))
             #best_plane = utils.findNorms(output_norm,mid_height,mid_width,frame)
             t1.start()
+            '''
+            for i in range(0,9):
+                for j in range(0,9):
+                    sx = j * width_interval
+                    sy = i * height_interval
+                    ex = sx+width_interval
+                    ey = sy + height_interval
+                    cv2.rectangle(frame,(sx,sy),(ex,ey),(255,255,0),2)
+            '''
 
-            #find a region that has least amount of objects
-            safe_region = [[0]]
-            safe_tiles = []
-            visited_submat = []
-            visited_centers = []
-            found = False
-            c_x = 0
-            c_y = 0
-            first_try = True
-            while len(visited_centers)<=20 and not found:
-                #choose a random center
-                #x,y are the coordinates of the left top cornor of the tile
-                if first_try:
-                    y = last_center[1]
-                    x = last_center[0]
-                    first_try = False
-                else:
-                    y = random.randint(4,6)
-                    x = random.randint(1,7)
-                    while [x,y] in visited_centers:
-                        y = random.randint(4, 6)
-                        x = random.randint(1, 7)
-                visited_centers.append([x,y])
-                safe_region.append([])
-                #start to span a rectangle
-                c_x = x
-                c_y = y
+            ###
+            safe_region_size = 4
+            visited_safe = []
+            visited_unsafe = []
+            tried_center = []
+            safe_center_count = []
+            best_center = []
+            candidate_center = None
+            min_rand = safe_region_size-2
+            max_rand = 8 - safe_region_size + 1
 
-                queue = [[x,y]]
-                dis_to_center = 1
-                #rectangle will be large enough when the first coord that is 3 tiles away from the center is popped
-                counter = 0
+            while len(tried_center)< pow((max_rand-min_rand+1),2):
+
+                queue = []
+                visited = []
+                c_x = 4
+                c_y = 4
+                if len(tried_center)>=0:
+                    while [c_x,c_y] in tried_center:
+                        c_x = random.randint(min_rand,max_rand)
+                        c_y = random.randint(min_rand,max_rand)
+
+                queue.append([c_x,c_y])
+                tried_center.append([c_x,c_y])
+
+                safe_count = 0
                 while len(queue)>0:
                     coord = queue.pop(0)
+                    visited.append(coord)
                     x = coord[0]
                     y = coord[1]
-
-
-
-                    if abs(x-c_x)>dis_to_center or abs(y-c_y)>dis_to_center:
-                        #safe region is a 3 * 3 square
-                        #the distance from the edge of the rectangle to the center is 1 tile
-                        found = True
-                        last_center=[c_x,c_y]
+                    if coord in visited_unsafe:
                         break
-
-
-
-                    if coord in visited_submat and coord not in safe_tiles:
-                        # unable to span a rectangle
-                        break
-                    elif coord in visited_submat and coord in safe_tiles:
-                        safe_region[len(safe_region) - 1].append([x,y])
-                        counter+=1
-                    elif coord not in visited_submat:
-                        #not visited
-                        visited_submat.append(coord)
+                    elif coord not in visited_safe:
                         subMat = output_norm[y * height_interval:height_interval + y * height_interval,
-                                    x * width_interval:width_interval + x * width_interval]
+                                 x * width_interval:width_interval + x * width_interval]
 
-                        subMat = [[0.01 if a < 0.4 else a for a in row] for row in subMat]
-
-                        if y >= 4:
+                        subMat = [[0.01 if a < 0.5 else a for a in row] for row in subMat]
+                        # filter out ground
+                        if y >= 5:
                             t1.join()
                             best_plane = results[0]
 
                             for i in range(0, len(subMat)):
-                                for j in range(0 ,len(subMat) ):
-                                    d = best_plane[0][0] * j + best_plane[0][1] * i + best_plane[0][2] * output_norm[i+y*height_interval][j+x*width_interval]
-                                    if abs(abs(d) - abs(best_plane[1])) < 39.0:
+                                for j in range(0, len(subMat)):
+                                    r_x = j + x * width_interval
+                                    r_y = i + y * height_interval
+                                    d = best_plane[0][0] * r_x + best_plane[0][1] * r_y + best_plane[0][2] * \
+                                        output_norm[r_y][r_x]
+                                    if abs(abs(d) - abs(best_plane[1])) <= 20.0:
                                         subMat[i][j] = 0.01
-
-
-                        if np.mean(subMat)<=0.02:
-                            #safe
-                            safe_region[len(safe_region)-1].append([x,y])
-                            safe_tiles.append([x,y])
-                            counter+=1
+                            if np.mean(subMat) < 0.6:
+                                # safe
+                                visited_safe.append(coord)
+                                safe_count+=1
+                            else:
+                                visited_unsafe.append(coord)
+                                break
                         else:
-                            #not safe break
-                            break
-
-                    #expand surronding tiles
-                    tmp_list = []
-                    if (y+1) < 9:
-                        if [x,y+1] not in queue:
-                            tmp_list+=[[x,y+1]]
-                        if (x+1) < 9:
-                            if [x+1,y+1] not in queue:
-                                tmp_list+=[[x+1,y+1]]
-                            if [x+1,y] not in queue:
-                                tmp_list+=[[x+1,y]]
-                        if (x-1) >= 0:
-                            if [x - 1, y + 1] not in queue:
-                                tmp_list += [[x - 1, y + 1]]
-                            if [x - 1, y] not in queue:
-                                tmp_list += [[x - 1, y]]
-                    if (y-1)>=0:
-                        if [x,y-1] not in queue:
-                            tmp_list+=[[x,y-1]]
-                        if (x+1) < 9:
-                            if [x+1,y-1] not in queue:
-                                tmp_list+=[[x+1,y-1]]
-
-                        if (x-1) >= 0:
-                            if [x - 1, y - 1] not in queue:
-                                tmp_list += [[x - 1, y - 1]]
-                    queue+=tmp_list
-            #find the largest one
-            max_len = 0
-            max_region = []
-            safe_region[0].pop(0)
-            for region in safe_region:
-                if len(region)>max_len and len(region)>=25:
-                    max_len = len(region)
-                    max_region = region
-
-            if not found:
-                leftSubMat = output_norm[0:9*height_interval,
-                                    0:mid_width]
-
-                rightSubMat = output_norm[0:9*height_interval,
-                                    mid_width:9*width_interval]
-
-                leftMean = np.mean(leftSubMat)
-                rightMean = np.mean(rightSubMat)
-
-                if leftMean < rightMean:
-                    if leftMean <= 0.45:
-                        cv2.rectangle(frame, (0, 0), (3*width_interval, 9*height_interval), (0, 255, 255), 2)
+                            # print("ground: ",np.mean(subMat))
+                            if np.mean(subMat) <= 0.02:
+                                # safe
+                                visited_safe.append(coord)
+                                safe_count+=1
+                            else:
+                                visited_unsafe.append(coord)
+                                break
                     else:
-                        print("stop")
-                else:
-                    if rightMean <= 0.45:
-                        cv2.rectangle(frame, (5*width_interval, 0), (9 * width_interval, 9 * height_interval), (0, 255, 255), 2)
-                    else:
-                        print("Stop")
+                        safe_count+=1
+
+                    #expand
+                    if x-1>=0 and x+1<9 and y-1>=0 and y+1<9:
+                        tmp = [[x,y+1],[x,y-1],[x+1,y],[x-1,y]]
+                        for c in tmp:
+                            if c not in visited and c not in queue:
+                                if abs(c[0]-c_x)<=2 and abs(c[1]-c_y)<=safe_region_size-1:
+                                    queue.append(c)
+
+                safe_center_count.append(safe_count)
+                if safe_count==35:
+                    best_center = [c_x,c_y]
+                    break
+            if best_center == []:
+                #unable to find a large enough region
+                max_count = 0
+                idx = None
+                for i in range(0,len(safe_center_count)):
+                    if safe_center_count[i]>=33 and safe_center_count[i]>max_count:
+                        idx = i
+                if idx != None:
+                    candidate_center = tried_center[i]
             else:
+                candidate_center = best_center
 
-                sX = (c_x-(dis_to_center+1))*width_interval
-                sY = (c_y-(dis_to_center+1))*height_interval
-                eX = (c_x+(dis_to_center+1))*width_interval+width_interval
-                eY = (c_y+(dis_to_center+1))*height_interval+height_interval
+            if candidate_center!=None:
+                sX = (candidate_center[0]-safe_region_size+1)*width_interval
+                sY = (candidate_center[1]-safe_region_size+1)*height_interval
+                eX = (candidate_center[0]+safe_region_size)*width_interval
+                eY = (candidate_center[1]+safe_region_size)*height_interval
                 cv2.rectangle(frame,(sX,sY),(eX,eY),(255,0,0),2)
-                #cv2.rectangle(frame,(4*width_interval,4*height_interval),(4*width_interval+width_interval,4*height_interval+height_interval),(255,255,0),2)#draw center
-                cv2.line(frame,(0,9*height_interval),(sX,eY),(255,0,0),2)
-                cv2.line(frame, (9*width_interval, 9 * height_interval), (eX, eY), (255, 0, 0), 2)
+            else:
+                left = output_norm[0:frame.shape[1],0:mid_width]
+                right = output_norm[0:frame.shape[1],mid_width:frame.shape[0]]
+                meanL = np.mean(left)
+                meanR = np.mean(right)
+                if meanR>=0.7 and meanL>=0.7:
+                    print("STOP")
+                else:
+                    if meanR < meanL:
+                        cv2.rectangle(frame,(mid_width,0),(frame.shape[0],frame.shape[1]),(0,255,255),2)
+                    else:
+                        cv2.rectangle(frame, (0, 0), (mid_width, frame.shape[1]),(0,255,255),2)
+
+
+            ###
+            '''
+            safe_region_size = 3
+            for x in range(0,9):
+                for y in range(2,9):
+                    #not yet visited
+                    #check if it is a safe block
+                    subMat = output_norm[y * height_interval:height_interval + y * height_interval,
+                             x * width_interval:width_interval + x * width_interval]
+
+                    subMat = [[0.01 if a < 0.4 else a for a in row] for row in subMat]
+                    # filter out ground
+                    if y >= 5:
+                        t1.join()
+                        best_plane = results[0]
+
+                        for i in range(0, len(subMat)):
+                            for j in range(0, len(subMat)):
+                                r_x = j + x * width_interval
+                                r_y = i + y * height_interval
+                                d = best_plane[0][0] * r_x + best_plane[0][1] * r_y + best_plane[0][2] * \
+                                    output_norm[r_y][r_x]
+                                if abs(abs(d) - abs(best_plane[1])) <= 20.0:
+                                    subMat[i][j] = 0.01
+                        if np.mean(subMat) < 0.6:
+                            #safe
+                            sX = x*width_interval
+                            sY = y * height_interval
+                            eX = sX + width_interval
+                            eY = sY + height_interval
+                            cv2.rectangle(frame,(sX,sY),(eX,eY),(255,0,0),2)
+                    else:
+                        # print("ground: ",np.mean(subMat))
+                        if np.mean(subMat) <= 0.02:
+                            #safe
+                            sX = x*width_interval
+                            sY = y * height_interval
+                            eX = sX + width_interval
+                            eY = sY + height_interval
+                            cv2.rectangle(frame,(sX,sY),(eX,eY),(255,0,0),2)
+                            '''
+
+
+
+
+
+
+
+
+
+
             '''
             #filter ground
             #for demo only
-            for i in range (0,output_norm.shape[0]):
+            for i in range (mid_height,output_norm.shape[0]):
                 for j in range(0,output_norm.shape[1]):
                     d = best_plane[0][0]*j+best_plane[0][1]*i+best_plane[0][2]*output_norm[i][j]
                     if abs(abs(d)-abs(best_plane[1])) < 39.0:
                         output_norm[i][j]=0.01
-            '''
+                        '''
+
+
 
 
 
@@ -261,9 +290,9 @@ def estimation(dimX, dimY, modelName,cam_channel=0,mode="ground"):
         diff_time = end-start #unit is sec/frame
         frame_rate = round(1/diff_time,2)
         font = cv2.FONT_HERSHEY_SIMPLEX
-        cv2.putText(depth_out,"FPS "+str(frame_rate),(50,50),font,1,(255,255,255),2,cv2.LINE_4)
+        cv2.putText(frame,"FPS "+str(frame_rate),(50,50),font,1,(255,255,255),2,cv2.LINE_4)
         cv2.imshow("depth image", depth_out)
-        cv2.imshow("processed",output_norm)
+        #cv2.imshow("processed",output_norm)
         cv2.imshow("Original",frame)
 
         if cv2.waitKey(10) & 0xFF == ord('q'):
