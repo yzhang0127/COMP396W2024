@@ -88,17 +88,7 @@ def estimation(dimX, dimY, modelName,cam_channel=0,mode="ground"):
             t1 = threading.Thread(target=utils.findNorms,args=(output_norm,frame,results))
             #best_plane = utils.findNorms(output_norm,mid_height,mid_width,frame)
             t1.start()
-            '''
-            for i in range(0,9):
-                for j in range(0,9):
-                    sx = j * width_interval
-                    sy = i * height_interval
-                    ex = sx+width_interval
-                    ey = sy + height_interval
-                    cv2.rectangle(frame,(sx,sy),(ex,ey),(255,255,0),2)
-            '''
 
-            ###
             safe_region_size = 4
             visited_safe = []
             visited_unsafe = []
@@ -106,7 +96,7 @@ def estimation(dimX, dimY, modelName,cam_channel=0,mode="ground"):
             safe_center_count = []
             best_center = []
             candidate_center = None
-            min_rand = safe_region_size-2
+            min_rand = 4
             max_rand = 8 - safe_region_size + 1
 
             while len(tried_center)< pow((max_rand-min_rand+1),2):
@@ -117,7 +107,7 @@ def estimation(dimX, dimY, modelName,cam_channel=0,mode="ground"):
                 c_y = 4
                 if len(tried_center)>=0:
                     while [c_x,c_y] in tried_center:
-                        c_x = random.randint(min_rand,max_rand)
+                        c_x = random.randint(2,max_rand)
                         c_y = random.randint(min_rand,max_rand)
 
                 queue.append([c_x,c_y])
@@ -135,7 +125,7 @@ def estimation(dimX, dimY, modelName,cam_channel=0,mode="ground"):
                         subMat = output_norm[y * height_interval:height_interval + y * height_interval,
                                  x * width_interval:width_interval + x * width_interval]
 
-                        subMat = [[0.01 if a < 0.5 else a for a in row] for row in subMat]
+                        subMat = [[0.01 if a <= 0.5 else a for a in row] for row in subMat]
                         # filter out ground
                         if y >= 5:
                             t1.join()
@@ -173,7 +163,7 @@ def estimation(dimX, dimY, modelName,cam_channel=0,mode="ground"):
                         tmp = [[x,y+1],[x,y-1],[x+1,y],[x-1,y]]
                         for c in tmp:
                             if c not in visited and c not in queue:
-                                if abs(c[0]-c_x)<=2 and abs(c[1]-c_y)<=safe_region_size-1:
+                                if abs(c[0]-c_x)<=safe_region_size-1 and abs(c[1]-c_y)<=safe_region_size-1:
                                     queue.append(c)
 
                 safe_center_count.append(safe_count)
@@ -203,81 +193,26 @@ def estimation(dimX, dimY, modelName,cam_channel=0,mode="ground"):
                 right = output_norm[0:frame.shape[1],mid_width:frame.shape[0]]
                 meanL = np.mean(left)
                 meanR = np.mean(right)
-                if meanR>=0.7 and meanL>=0.7:
+                if meanR>=0.6 and meanL>=0.6:
                     print("STOP")
                 else:
-                    if meanR < meanL:
-                        cv2.rectangle(frame,(mid_width,0),(frame.shape[0],frame.shape[1]),(0,255,255),2)
+                    if meanL - meanR >= 0.1:
+                        cv2.rectangle(frame,(mid_width,0),(frame.shape[1],frame.shape[0]),(0,255,255),2)
                     else:
-                        cv2.rectangle(frame, (0, 0), (mid_width, frame.shape[1]),(0,255,255),2)
-
-
-            ###
-            '''
-            safe_region_size = 3
-            for x in range(0,9):
-                for y in range(2,9):
-                    #not yet visited
-                    #check if it is a safe block
-                    subMat = output_norm[y * height_interval:height_interval + y * height_interval,
-                             x * width_interval:width_interval + x * width_interval]
-
-                    subMat = [[0.01 if a < 0.4 else a for a in row] for row in subMat]
-                    # filter out ground
-                    if y >= 5:
-                        t1.join()
-                        best_plane = results[0]
-
-                        for i in range(0, len(subMat)):
-                            for j in range(0, len(subMat)):
-                                r_x = j + x * width_interval
-                                r_y = i + y * height_interval
-                                d = best_plane[0][0] * r_x + best_plane[0][1] * r_y + best_plane[0][2] * \
-                                    output_norm[r_y][r_x]
-                                if abs(abs(d) - abs(best_plane[1])) <= 20.0:
-                                    subMat[i][j] = 0.01
-                        if np.mean(subMat) < 0.6:
-                            #safe
-                            sX = x*width_interval
-                            sY = y * height_interval
-                            eX = sX + width_interval
-                            eY = sY + height_interval
-                            cv2.rectangle(frame,(sX,sY),(eX,eY),(255,0,0),2)
-                    else:
-                        # print("ground: ",np.mean(subMat))
-                        if np.mean(subMat) <= 0.02:
-                            #safe
-                            sX = x*width_interval
-                            sY = y * height_interval
-                            eX = sX + width_interval
-                            eY = sY + height_interval
-                            cv2.rectangle(frame,(sX,sY),(eX,eY),(255,0,0),2)
-                            '''
-
-
-
-
-
-
-
-
+                        cv2.rectangle(frame, (0, 0), (mid_width, frame.shape[0]),(0,255,255),2)
 
 
             '''
             #filter ground
             #for demo only
+            t1.join()
+            best_plane = results[0]
             for i in range (mid_height,output_norm.shape[0]):
                 for j in range(0,output_norm.shape[1]):
                     d = best_plane[0][0]*j+best_plane[0][1]*i+best_plane[0][2]*output_norm[i][j]
-                    if abs(abs(d)-abs(best_plane[1])) < 39.0:
+                    if abs(abs(d)-abs(best_plane[1])) < 40.0:
                         output_norm[i][j]=0.01
                         '''
-
-
-
-
-
-
 
 
 

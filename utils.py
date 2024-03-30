@@ -89,14 +89,14 @@ def findNorms(output_norm,frame,results):
                 Z = output_norm[Y][X]
                 if [X, Y, Z] not in tmp:
                     tmp.append([X, Y, Z])
+                else:
+                    continue
                 if len(tmp) == 3:
                     # check non-colinear
                     AB = np.array(tmp[0]) - np.array(tmp[1])
                     BC = np.array(tmp[1]) - np.array(tmp[2])
-
                     cross_prod = np.cross(BC, AB)
-                    norm = np.linalg.norm(cross_prod)
-                    if norm < 10.0:
+                    if (tmp[0][0]-tmp[1][0] == 0 and tmp[0][0]-tmp[2][0]==0) or (tmp[0][1] - tmp[1][1] == 0 and tmp[0][1] - tmp[2][1] == 0):
                         # colinear
                         tmp.clear()
                     else:
@@ -129,4 +129,3 @@ def findNorms(output_norm,frame,results):
         best_plane = norms[best_fit_idx]
         most_counts = counts[best_fit_idx]
         results[0] = best_plane
-
