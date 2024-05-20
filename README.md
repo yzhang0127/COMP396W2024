@@ -10,7 +10,7 @@ Member: Yijun Zhang
 The aim of this project is to facilitate navigation and obstacle avoidance for autonomous robots while minimizing the expenditure on peripherals. This project involves using python, pytorch and openCV to process an input image from a RGB camera to find a safe path for the autonomous robot to follow.
 
 ## Visuals
-For all the specific test cases or demo, please read https://docs.google.com/document/d/1FO6Ub0ffqF-ezLOUPB6URQQ-g_7779S6S4RxHKvHr-Q/edit?usp=sharing
+For all the specific test cases or demo, please read [https://docs.google.com/document/d/1FO6Ub0ffqF-ezLOUPB6URQQ-g_7779S6S4RxHKvHr-Q/edit?usp=sharing](https://docs.google.com/document/d/1WRCtEa9kzLKDQuPQ54piGrdv7e0YX7yQ/edit?usp=sharing&ouid=105139983514988380865&rtpof=true&sd=true)
 
 
 ## Installation
