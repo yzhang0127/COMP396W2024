@@ -214,9 +214,10 @@ def estimation(dimX, dimY, modelName,cam_channel=0,mode="air"):
                 print("STOP")
             else:
                 if meanL  > meanR:
-                    cv2.rectangle(frame, (0, 0), (mid_width, frame.shape[0]),(0,255,255),2)
+                    cv2.rectangle(frame, (mid_width, 0), (frame.shape[1], frame.shape[0]), (0, 255, 255), 2)
                 elif meanL < meanR:
-                    cv2.rectangle(frame,(mid_width,0),(frame.shape[1],frame.shape[0]),(0,255,255),2)
+                    cv2.rectangle(frame, (0, 0), (mid_width, frame.shape[0]), (0, 255, 255), 2)
+
                 else:
                     print("STOP")
 
